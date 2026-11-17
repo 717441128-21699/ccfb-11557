@@ -1,0 +1,584 @@
+<title>轮胎节距序列优化台</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#151c25; --panel2:#1a2330; --line:#2a3542;
+    --txt:#dde5ee; --mut:#8b98a9; --acc:#f0a63c; --ok:#4cc38a; --bad:#e8654a;
+    --cA:#e8654a; --cB:#f2b544; --cC:#4aa8e8;
+  }
+  @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+    --bg:#f2f4f7; --panel:#ffffff; --panel2:#f7f9fb; --line:#d8dfe7;
+    --txt:#1c2632; --mut:#5c6b7c; --acc:#b06f00;
+  }}
+  :root[data-theme="light"]{
+    --bg:#f2f4f7; --panel:#ffffff; --panel2:#f7f9fb; --line:#d8dfe7;
+    --txt:#1c2632; --mut:#5c6b7c; --acc:#b06f00;
+  }
+  body{ background:var(--bg); color:var(--txt); font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif; }
+  #app{ max-width:1240px; margin:0 auto; padding:0 16px 40px; }
+  header.top{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; padding:18px 0 12px; }
+  header.top h1{ font-size:20px; margin:0; font-weight:650; }
+  header.top .sub{ color:var(--mut); font-size:13px; }
+  .badge{ margin-left:auto; font-size:12px; color:var(--acc); border:1px solid var(--acc); border-radius:20px; padding:3px 12px; white-space:nowrap; }
+  .layout{ display:grid; grid-template-columns:290px 1fr; gap:14px; align-items:start; }
+  @media (max-width:920px){ .layout{ grid-template-columns:1fr; } }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .card h2{ font-size:14px; margin:0 0 10px; font-weight:600; color:var(--txt); }
+  .card h2 .en{ color:var(--mut); font-weight:400; font-size:12px; margin-left:6px; }
+  .row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; }
+  .row label{ flex:0 0 76px; color:var(--mut); }
+  .row input[type=number], .row select{ flex:1; min-width:0; background:var(--panel2); border:1px solid var(--line); color:var(--txt); border-radius:6px; padding:5px 8px; font-size:13px; }
+  .pitchrow{ display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:13px; }
+  .swatch{ width:12px; height:12px; border-radius:3px; flex:0 0 12px; }
+  .pitchrow .nm{ flex:0 0 58px; }
+  .pitchrow input{ width:0; flex:1; background:var(--panel2); border:1px solid var(--line); color:var(--txt); border-radius:6px; padding:5px 6px; font-size:13px; }
+  .pitchrow .unit{ color:var(--mut); font-size:12px; flex:0 0 26px; }
+  .sumline{ font-size:12px; color:var(--mut); border-top:1px dashed var(--line); padding-top:8px; margin-top:8px; }
+  .btn{ display:block; width:100%; border:none; border-radius:7px; padding:9px 0; font-size:14px; cursor:pointer; margin-top:8px; }
+  .btn.pri{ background:var(--acc); color:#16100a; font-weight:650; }
+  .btn.sec{ background:var(--panel2); color:var(--txt); border:1px solid var(--line); }
+  .btn:disabled{ opacity:.5; cursor:default; }
+  .prog{ height:5px; background:var(--panel2); border-radius:3px; margin-top:10px; overflow:hidden; }
+  .prog>div{ height:100%; width:0%; background:var(--acc); transition:width .12s; }
+  #warn{ display:none; background:rgba(232,101,74,.12); border:1px solid var(--bad); color:var(--bad); border-radius:8px; padding:9px 12px; font-size:13px; margin-bottom:14px; }
+  .grid3d{ display:grid; grid-template-columns:1.5fr 1fr; gap:14px; }
+  @media (max-width:920px){ .grid3d{ grid-template-columns:1fr; } }
+  #tireWrap{ position:relative; height:340px; border-radius:8px; overflow:hidden; background:radial-gradient(ellipse at 50% 42%, #232d3a 0%, #11161d 75%); }
+  :root:not([data-theme="dark"]) #tireWrap{ background:radial-gradient(ellipse at 50% 42%, #e8edf3 0%, #d4dbe4 75%); }
+  @media (prefers-color-scheme: dark){ #tireWrap{ background:radial-gradient(ellipse at 50% 42%, #232d3a 0%, #11161d 75%); } }
+  #tire3d{ width:100%; height:100%; display:block; cursor:grab; touch-action:none; }
+  #tireWrap .hint{ position:absolute; left:10px; bottom:8px; font-size:11px; color:#9fb0c3; pointer-events:none; }
+  .audioBar{ display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap; }
+  .audioBar button{ background:var(--acc); border:none; color:#16100a; font-weight:650; border-radius:7px; padding:8px 18px; font-size:14px; cursor:pointer; }
+  .audioBar input[type=range]{ flex:1; min-width:120px; accent-color:var(--acc); }
+  .audioBar .spd{ font-size:13px; min-width:76px; text-align:right; }
+  .metrics{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .metric{ background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+  .metric .v{ font-size:19px; font-weight:650; }
+  .metric .l{ font-size:11.5px; color:var(--mut); margin-top:2px; }
+  .metric .v.ok{ color:var(--ok); } .metric .v.bad{ color:var(--bad); }
+  #strip{ display:flex; height:44px; border-radius:6px; overflow:hidden; }
+  #strip>div{ height:100%; position:relative; }
+  #strip>div:hover{ outline:2px solid #fff; outline-offset:-2px; z-index:2; }
+  .legend{ display:flex; gap:16px; font-size:12px; color:var(--mut); margin-top:8px; flex-wrap:wrap; }
+  .legend i{ display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; }
+  textarea{ width:100%; box-sizing:border-box; background:var(--panel2); border:1px solid var(--line); color:var(--txt); border-radius:6px; font-family:Consolas,monospace; font-size:12px; padding:8px; margin-top:8px; resize:vertical; }
+  canvas.chart{ width:100%; display:block; }
+  .charts{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:920px){ .charts{ grid-template-columns:1fr; } }
+  details{ font-size:12.5px; color:var(--mut); }
+  details summary{ cursor:pointer; color:var(--txt); font-size:13px; }
+  details p{ line-height:1.7; margin:6px 0; }
+  .copybtn{ background:var(--panel2); border:1px solid var(--line); color:var(--txt); border-radius:6px; padding:5px 14px; font-size:12px; cursor:pointer; margin-top:6px; }
+</style>
+
+<div id="app">
+  <header class="top">
+    <h1>轮胎花纹节距序列优化台</h1>
+    <span class="sub">三档节距自动排序 · 激励频谱评估 · 花纹噪声试听</span>
+    <span class="badge" id="evalBadge">单次序列评估 &lt; 1 s</span>
+  </header>
+
+  <div id="warn"></div>
+
+  <div class="layout">
+    <!-- ============ 左侧参数 ============ -->
+    <div>
+      <div class="card">
+        <h2>节距参数</h2>
+        <div class="pitchrow"><span class="swatch" style="background:var(--cA)"></span><span class="nm">节距 A</span><input id="len0" type="number" value="26" min="5" max="80" step="0.5"><span class="unit">mm</span><input id="cnt0" type="number" value="24" min="0" max="120" step="1"><span class="unit">个</span></div>
+        <div class="pitchrow"><span class="swatch" style="background:var(--cB)"></span><span class="nm">节距 B</span><input id="len1" type="number" value="30" min="5" max="80" step="0.5"><span class="unit">mm</span><input id="cnt1" type="number" value="24" min="0" max="120" step="1"><span class="unit">个</span></div>
+        <div class="pitchrow"><span class="swatch" style="background:var(--cC)"></span><span class="nm">节距 C</span><input id="len2" type="number" value="34" min="5" max="80" step="0.5"><span class="unit">mm</span><input id="cnt2" type="number" value="24" min="0" max="120" step="1"><span class="unit">个</span></div>
+        <div class="sumline" id="sumline"></div>
+      </div>
+
+      <div class="card">
+        <h2>约束条件</h2>
+        <div class="row"><label>同节距连排</label><input id="maxRun" type="number" value="4" min="1" max="12" step="1"><span class="unit">≤ 个</span></div>
+        <div class="row"><label>相邻长度比</label><input id="maxRatio" type="number" value="1.30" min="1" max="2" step="0.01"><span class="unit">≤</span></div>
+        <div class="row"><label>优化迭代</label><select id="iters"><option value="10000">1 万轮(快)</option><option value="30000" selected>3 万轮(均衡)</option><option value="100000">10 万轮(精细)</option></select></div>
+        <button class="btn pri" id="btnOpt">优化排列</button>
+        <button class="btn sec" id="btnRand">随机排列(对照)</button>
+        <div class="prog"><div id="progBar"></div></div>
+      </div>
+
+      <div class="card">
+        <h2>方法说明</h2>
+        <details>
+          <summary>频谱是怎么算出来的?</summary>
+          <p>每个花纹块入地一次相当于一次冲击,一圈 N 个节距就在圆周上形成 N 个冲击点。对冲击位置做傅里叶分析,得到各<b>阶次</b>(转频倍数)的激励幅值;阶次 k 在车速 v 下对应频率 f = k·v/周长。节距排得越规律,能量越集中在个别阶次上——这就是高速嗡嗡声的来源。</p>
+          <p>优化用模拟退火:随机交换两个节距位置,以降低"最高阶次峰值 + 峰值/均值比"为目标,同时硬约束同节距连排数和相邻长度比。评估与试听全部在本地浏览器完成。</p>
+        </details>
+      </div>
+    </div>
+
+    <!-- ============ 右侧结果 ============ -->
+    <div>
+      <div class="grid3d">
+        <div class="card">
+          <h2>三维花纹布置<span class="en">拖动旋转视角 · 播放时滚动</span></h2>
+          <div id="tireWrap"><canvas id="tire3d"></canvas><div class="hint">色块宽度 ∝ 节距长度(演示转速已放慢)</div></div>
+          <div class="audioBar">
+            <button id="btnPlay">▶ 播放花纹噪声</button>
+            <input id="spd" type="range" min="40" max="140" step="1" value="100">
+            <span class="spd" id="spdLab">100 km/h</span>
+          </div>
+        </div>
+        <div class="card">
+          <h2>序列评价指标</h2>
+          <div class="metrics" id="metrics"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>节距序列(一圈展开)</h2>
+        <div id="strip"></div>
+        <div class="legend" id="stripLegend"></div>
+        <textarea id="seqText" rows="3" readonly></textarea>
+        <button class="copybtn" id="btnCopy">复制序列</button>
+      </div>
+
+      <div class="charts">
+        <div class="card">
+          <h2>阶次激励谱<span class="en">dB,相对均值</span></h2>
+          <canvas class="chart" id="orderChart"></canvas>
+        </div>
+        <div class="card">
+          <h2>各车速激励频谱<span class="en">dB,相对均值</span></h2>
+          <canvas class="chart" id="freqChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="./three.min.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const TYPE_COLORS = ["#e8654a", "#f2b544", "#4aa8e8"];
+const TYPE_NAMES = ["A", "B", "C"];
+const SPEEDS = [60, 80, 100, 120];
+const SPEED_COLORS = ["#4aa8e8", "#4cc38a", "#f2b544", "#e8654a"];
+
+const S = {
+  lengths: [26, 30, 34], counts: [24, 24, 24],
+  maxRun: 4, maxRatio: 1.30,
+  N: 0, C: 0, seq: null,
+  amps: null, phases: null, K: 0,   // 扩展谱(图表/音频用, K=3N)
+  mean1N: 0,                         // 1..N 阶均值(dB 基准)
+  cum: null,                         // 各节距起始位置 mm
+  audioSpeed: 100, playing: false,
+};
+
+/* ---------------- 核心算法 ---------------- */
+let cosT = null, sinT = null;
+function buildTrig(C) {
+  cosT = new Float64Array(C); sinT = new Float64Array(C);
+  for (let m = 0; m < C; m++) { cosT[m] = Math.cos(2 * Math.PI * m / C); sinT[m] = Math.sin(2 * Math.PI * m / C); }
+}
+function cumPos(seq) {
+  const cum = new Int32Array(seq.length); let s = 0;
+  for (let i = 0; i < seq.length; i++) { cum[i] = s; s += S.lengths[seq[i]]; }
+  return cum;
+}
+function spectrum(cum, N, K) {
+  const amps = new Float64Array(K + 1), phases = new Float64Array(K + 1);
+  for (let k = 1; k <= K; k++) {
+    let re = 0, im = 0;
+    for (let i = 0; i < N; i++) { const idx = (k * cum[i]) % S.C; re += cosT[idx]; im += sinT[idx]; }
+    amps[k] = Math.sqrt(re * re + im * im) / N;
+    phases[k] = Math.atan2(im, re);
+  }
+  return { amps, phases };
+}
+function violations(seq) {
+  const N = seq.length; let runV = 0, ratioV = 0, maxRunFound = 1, maxRatioFound = 1;
+  for (let i = 0; i < N; i++) {
+    const a = S.lengths[seq[i]], b = S.lengths[seq[(i + 1) % N]];
+    const r = a > b ? a / b : b / a;
+    if (r > maxRatioFound) maxRatioFound = r;
+    if (r > S.maxRatio + 1e-9) ratioV++;
+  }
+  for (let i = 0; i < N; i++) {
+    if (seq[i] !== seq[(i - 1 + N) % N]) {
+      let rl = 1;
+      while (rl < N && seq[(i + rl) % N] === seq[i]) rl++;
+      if (rl > maxRunFound) maxRunFound = rl;
+      if (rl > S.maxRun) runV += rl - S.maxRun;
+    }
+  }
+  return { runV, ratioV, maxRunFound, maxRatioFound, total: runV + ratioV };
+}
+function costOf(seq, K) {
+  const cum = cumPos(seq);
+  let maxA = 0, sum = 0;
+  for (let k = 1; k <= K; k++) {
+    let re = 0, im = 0;
+    for (let i = 0; i < seq.length; i++) { const idx = (k * cum[i]) % S.C; re += cosT[idx]; im += sinT[idx]; }
+    const a = Math.sqrt(re * re + im * im);
+    if (a > maxA) maxA = a; sum += a;
+  }
+  maxA /= seq.length;
+  const par = maxA / (sum / K / seq.length);
+  return maxA + 0.05 * par + 3 * violations(seq).total;
+}
+function randomSeq() {
+  const a = [];
+  S.counts.forEach((c, t) => { for (let i = 0; i < c; i++) a.push(t); });
+  for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+async function anneal(iters, onProg) {
+  const N = S.N, K = N;
+  let cur = randomSeq(), curCost = costOf(cur, K);
+  let best = cur.slice(), bestCost = curCost;
+  const T0 = 0.06, T1 = 2e-4, CHUNK = 4000;
+  let it = 0;
+  while (it < iters) {
+    const end = Math.min(it + CHUNK, iters);
+    for (; it < end; it++) {
+      const T = T0 * Math.pow(T1 / T0, it / iters);
+      let i = (Math.random() * N) | 0, j = (Math.random() * N) | 0;
+      if (i === j) continue;
+      const t = cur[i]; cur[i] = cur[j]; cur[j] = t;
+      const c = costOf(cur, K);
+      if (c < curCost || Math.random() < Math.exp((curCost - c) / T)) {
+        curCost = c;
+        if (c < bestCost) { bestCost = c; best = cur.slice(); }
+      } else { const t2 = cur[i]; cur[i] = cur[j]; cur[j] = t2; }
+    }
+    onProg(it / iters);
+    await new Promise(r => setTimeout(r, 0));
+  }
+  return best;
+}
+
+/* ---------------- 输入与校验 ---------------- */
+function readInputs() {
+  const L = [0, 1, 2].map(i => parseFloat($("len" + i).value));
+  const Cn = [0, 1, 2].map(i => Math.max(0, parseInt($("cnt" + i).value) || 0));
+  const errs = [];
+  L.forEach((l, i) => { if (!(l >= 5 && l <= 80)) errs.push("节距 " + TYPE_NAMES[i] + " 长度需在 5~80 mm"); });
+  if (L.some((l, i) => Cn[i] > 0 && !isFinite(l))) errs.push("长度输入无效");
+  const N = Cn.reduce((a, b) => a + b, 0);
+  if (N < 8) errs.push("总节数至少 8");
+  if (Cn.filter(c => c > 0).length < 2) errs.push("至少使用两种节距");
+  S.maxRun = Math.max(1, parseInt($("maxRun").value) || 4);
+  S.maxRatio = Math.max(1, parseFloat($("maxRatio").value) || 1.3);
+  if (errs.length) throw errs.join("; ");
+  S.lengths = L; S.counts = Cn; S.N = N;
+  S.C = Math.round(L.reduce((s, l, i) => s + l * Cn[i], 0));
+  $("sumline").textContent = "总节数 N = " + N + " · 周长 ≈ " + S.C + " mm · 滚动半径 ≈ " + (S.C / 2 / Math.PI).toFixed(0) + " mm";
+}
+function feasibilityWarn() {
+  const w = [];
+  S.counts.forEach((c, t) => {
+    if (c === 0) return;
+    const others = S.N - c;
+    if (Math.ceil(c / S.maxRun) > Math.max(1, others)) w.push("节距 " + TYPE_NAMES[t] + " 共 " + c + " 个,在连排 ≤ " + S.maxRun + " 下其余节距不足以隔开,约束不可行");
+  });
+  const used = S.lengths.filter((l, i) => S.counts[i] > 0);
+  const r = Math.max(...used) / Math.min(...used);
+  if (r > S.maxRatio && used.length > 2) w.push("最长/最短节距比 " + r.toFixed(2) + " 超过相邻比上限 " + S.maxRatio + ",这两种节距将不能相邻,请确认中间节距数量足够");
+  return w;
+}
+function showWarn(list, isErr) {
+  const el = $("warn");
+  if (!list.length) { el.style.display = "none"; return; }
+  el.style.display = "block";
+  el.textContent = (isErr ? "⚠ " : "提示:") + list.join("; ");
+}
+
+/* ---------------- 评估与渲染 ---------------- */
+function evaluate(seq) {
+  S.seq = seq;
+  S.cum = cumPos(seq);
+  S.K = 3 * S.N;
+  const sp = spectrum(S.cum, S.N, S.K);
+  S.amps = sp.amps; S.phases = sp.phases;
+  let sum = 0, maxA = 0, maxK = 1;
+  for (let k = 1; k <= S.N; k++) { sum += S.amps[k]; if (S.amps[k] > maxA) { maxA = S.amps[k]; maxK = k; } }
+  S.mean1N = sum / S.N;
+  return { maxA, maxK, par: maxA / S.mean1N };
+}
+function renderMetrics(m, v, optMs) {
+  const frot100 = (100 / 3.6) / (S.C / 1000);
+  let toneF = 0, toneA = 0;
+  for (let k = 1; k <= S.K; k++) {
+    const f = k * frot100;
+    if (f < 200 || f > 2000) continue;
+    if (S.amps[k] > toneA) { toneA = S.amps[k]; toneF = f; }
+  }
+  const db = a => (20 * Math.log10(a / S.mean1N)).toFixed(1);
+  const cards = [
+    [db(m.maxA) + " dB", "最高阶次峰值(第 " + m.maxK + " 阶)", m.maxA / S.mean1N < 3 ? "ok" : ""],
+    [m.par.toFixed(2), "峰值/均值比(越小越摊得越开)", m.par < 5 ? "ok" : ""],
+    [v.maxRunFound + " 个", "实际最大连排(限 " + S.maxRun + ")", v.maxRunFound <= S.maxRun ? "ok" : "bad"],
+    [v.maxRatioFound.toFixed(3), "实际最大相邻比(限 " + S.maxRatio + ")", v.maxRatioFound <= S.maxRatio + 1e-9 ? "ok" : "bad"],
+    [toneF.toFixed(0) + " Hz", "100 km/h 最强纯音频率", ""],
+    [optMs != null ? optMs.toFixed(0) + " ms" : "—", "优化耗时(" + $("iters").selectedOptions[0].textContent + ")", "ok"],
+  ];
+  $("metrics").innerHTML = cards.map(c => '<div class="metric"><div class="v ' + c[2] + '">' + c[0] + '</div><div class="l">' + c[1] + "</div></div>").join("");
+}
+function renderStrip() {
+  const el = $("strip"); el.innerHTML = "";
+  S.seq.forEach((t, i) => {
+    const d = document.createElement("div");
+    d.style.width = (S.lengths[t] / S.C * 100) + "%";
+    d.style.background = TYPE_COLORS[t];
+    d.title = "第 " + (i + 1) + " 节 · 节距 " + TYPE_NAMES[t] + " · " + S.lengths[t] + " mm";
+    el.appendChild(d);
+  });
+  $("stripLegend").innerHTML = TYPE_NAMES.map((n, t) =>
+    S.counts[t] > 0 ? '<span><i style="background:' + TYPE_COLORS[t] + '"></i>' + n + " = " + S.lengths[t] + " mm × " + S.counts[t] + "</span>" : "").join("");
+  const typeSeq = S.seq.map(t => TYPE_NAMES[t]).join("");
+  const lenSeq = S.seq.map(t => S.lengths[t]).join(",");
+  $("seqText").value = "类型序列(" + TYPE_NAMES.map((n, t) => n + "=" + S.lengths[t] + "mm").join(",") + "):\n" + typeSeq + "\n长度序列(mm): " + lenSeq;
+}
+
+/* ---------------- 图表 ---------------- */
+function setupCanvas(cv, h) {
+  const w = cv.parentElement.clientWidth - 32;
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = w * dpr; cv.height = h * dpr; cv.style.height = h + "px";
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return [ctx, w, h];
+}
+const DB_LO = -24, DB_HI = 12;
+function dbOf(a) { return Math.max(DB_LO, Math.min(DB_HI, 20 * Math.log10(a / S.mean1N))); }
+function drawAxes(ctx, w, h, xLabel, xMax, xTicks) {
+  const L = 40, R = 10, T = 12, B = 26, pw = w - L - R, ph = h - T - B;
+  const css = getComputedStyle(document.body);
+  const mut = "#8b98a9", line = "rgba(140,155,170,.25)";
+  ctx.font = "10px sans-serif"; ctx.fillStyle = mut; ctx.strokeStyle = line; ctx.lineWidth = 1;
+  const yOf = db => T + ph * (DB_HI - db) / (DB_HI - DB_LO);
+  [-20, -10, 0, 10].forEach(db => {
+    const y = yOf(db);
+    ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(L + pw, y); ctx.stroke();
+    ctx.fillText(db + "", 6, y + 3);
+  });
+  ctx.fillText("dB", 6, T - 2);
+  xTicks.forEach(x => {
+    const px = L + pw * x / xMax;
+    ctx.fillText(x + "", px - 8, T + ph + 14);
+  });
+  ctx.fillText(xLabel, L + pw - ctx.measureText(xLabel).width, T + ph + 24);
+  return { L, T, pw, ph, yOf };
+}
+function drawOrderChart() {
+  const [ctx, w, h] = setupCanvas($("orderChart"), 220);
+  const ticks = []; for (let x = 0; x <= S.N; x += Math.ceil(S.N / 8)) ticks.push(x);
+  const a = drawAxes(ctx, w, h, "阶次 k", S.N, ticks);
+  const bw = Math.max(1, a.pw / S.N - 1);
+  let maxK = 1; for (let k = 2; k <= S.N; k++) if (S.amps[k] > S.amps[maxK]) maxK = k;
+  for (let k = 1; k <= S.N; k++) {
+    const x = a.L + a.pw * (k - 0.5) / S.N;
+    const y = a.yOf(dbOf(S.amps[k])), y0 = a.yOf(0);
+    ctx.fillStyle = k === maxK ? "#e8654a" : "#4aa8e8";
+    ctx.fillRect(x - bw / 2, Math.min(y, y0), bw, Math.max(1, Math.abs(y0 - y)));
+  }
+}
+function drawFreqChart() {
+  const [ctx, w, h] = setupCanvas($("freqChart"), 220);
+  const FMAX = 2600;
+  const a = drawAxes(ctx, w, h, "频率 Hz", FMAX, [0, 500, 1000, 1500, 2000, 2500]);
+  // 人耳敏感区
+  ctx.fillStyle = "rgba(240,166,60,.08)";
+  ctx.fillRect(a.L + a.pw * 300 / FMAX, a.T, a.pw * 1300 / FMAX, a.ph);
+  ctx.fillStyle = "#8b98a9"; ctx.font = "10px sans-serif";
+  ctx.fillText("人耳敏感区", a.L + a.pw * 300 / FMAX + 6, a.T + 12);
+  const Cm = S.C / 1000;
+  SPEEDS.forEach((v, si) => {
+    const frot = (v / 3.6) / Cm;
+    ctx.strokeStyle = SPEED_COLORS[si]; ctx.lineWidth = 1.4; ctx.beginPath();
+    let started = false;
+    for (let k = 1; k <= S.K; k++) {
+      const f = k * frot; if (f > FMAX) break;
+      const x = a.L + a.pw * f / FMAX, y = a.yOf(dbOf(S.amps[k]));
+      if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  });
+  // 图例
+  ctx.font = "11px sans-serif";
+  SPEEDS.forEach((v, si) => {
+    const x = a.L + 8 + si * 76, y = a.T + 12;
+    ctx.fillStyle = SPEED_COLORS[si]; ctx.fillRect(x, y - 8, 10, 3);
+    ctx.fillStyle = "#8b98a9"; ctx.fillText(v + " km/h", x + 14, y - 3);
+  });
+}
+
+/* ---------------- 三维 ---------------- */
+let renderer, scene, camera, viewGroup, spinGroup, blockGroup, blockMats;
+function init3D() {
+  const cv = $("tire3d"), wrap = $("tireWrap");
+  renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+  camera.position.set(0, 1.1, 5.8); camera.lookAt(0, 0, 0);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x1a2028, 1.2));
+  const dl = new THREE.DirectionalLight(0xffffff, 1.8); dl.position.set(3, 5, 4); scene.add(dl);
+  viewGroup = new THREE.Group(); scene.add(viewGroup);
+  spinGroup = new THREE.Group(); viewGroup.add(spinGroup);
+  spinGroup.add(new THREE.Mesh(new THREE.TorusGeometry(1.72, 0.45, 28, 120),
+    new THREE.MeshStandardMaterial({ color: 0x14171c, roughness: 0.95 })));
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(1.34, 1.34, 0.4, 48),
+    new THREE.MeshStandardMaterial({ color: 0x9aa2ac, metalness: 0.85, roughness: 0.35 }));
+  rim.rotation.x = Math.PI / 2; spinGroup.add(rim);
+  blockGroup = new THREE.Group(); spinGroup.add(blockGroup);
+  blockMats = TYPE_COLORS.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 }));
+  // 拖动
+  let dragging = false, px = 0, py = 0;
+  cv.addEventListener("pointerdown", e => { dragging = true; px = e.clientX; py = e.clientY; cv.setPointerCapture(e.pointerId); cv.style.cursor = "grabbing"; });
+  cv.addEventListener("pointermove", e => {
+    if (!dragging) return;
+    viewGroup.rotation.y += (e.clientX - px) * 0.006;
+    viewGroup.rotation.x = Math.max(-1, Math.min(1, viewGroup.rotation.x + (e.clientY - py) * 0.006));
+    px = e.clientX; py = e.clientY;
+  });
+  cv.addEventListener("pointerup", () => { dragging = false; cv.style.cursor = "grab"; });
+  function resize() {
+    const w = wrap.clientWidth, h = wrap.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(wrap); resize();
+  let last = performance.now();
+  (function anim(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const frot = (S.audioSpeed / 3.6) / (S.C / 1000 || 2.16);
+    spinGroup.rotation.z -= (S.playing ? frot * 0.12 : 0.35) * dt;
+    renderer.render(scene, camera);
+    requestAnimationFrame(anim);
+  })(last);
+}
+function rebuildBlocks() {
+  while (blockGroup.children.length) blockGroup.remove(blockGroup.children[0]);
+  const geo = new THREE.BoxGeometry(1, 1, 1), R = 2.12;
+  for (let i = 0; i < S.N; i++) {
+    const t = S.seq[i], len = S.lengths[t];
+    const ang = (S.cum[i] + len / 2) / S.C * 2 * Math.PI;
+    const m = new THREE.Mesh(geo, blockMats[t]);
+    m.scale.set(len / S.C * 2 * Math.PI * R * 0.88, 0.16, 1.15);
+    m.position.set(Math.cos(ang) * R, Math.sin(ang) * R, 0);
+    m.rotation.z = ang + Math.PI / 2;
+    blockGroup.add(m);
+  }
+}
+
+/* ---------------- 音频 ---------------- */
+let actx = null, srcNode = null, gainNode = null;
+function buildAudioBuffer() {
+  const sr = 44100, Cm = S.C / 1000, v = S.audioSpeed / 3.6, frot = v / Cm;
+  const revs = Math.max(3, Math.round(2.2 * frot));
+  const dur = revs / frot, len = Math.floor(dur * sr);
+  const buf = actx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+  // 1) 纯音部分:按阶次谱直接合成
+  const tonal = new Float64Array(len);
+  for (let k = 1; k <= S.K; k++) {
+    const f = k * frot; if (f < 80 || f > 2700) continue;
+    const a = S.amps[k]; if (a < 0.008) continue;
+    const dw = 2 * Math.PI * f / sr; let ang = S.phases[k];
+    for (let n = 0; n < len; n++) { tonal[n] += a * Math.sin(ang); ang += dw; if (ang > 6.2832) ang -= 6.2832; }
+  }
+  let pk = 0; for (let n = 0; n < len; n++) pk = Math.max(pk, Math.abs(tonal[n]));
+  const tGain = pk > 0 ? 0.62 / pk : 0;
+  // 2) 宽带冲击噪声:冲击包络 × 带通噪声
+  const env = new Float64Array(len), tau = 0.0035 * sr, blen = Math.floor(tau * 6);
+  for (let r = 0; r < revs; r++) for (let i = 0; i < S.N; i++) {
+    const s0 = Math.floor((r / frot + S.cum[i] / S.C / frot) * sr);
+    for (let n = 0; n < blen && s0 + n < len; n++) env[s0 + n] += Math.exp(-n / tau);
+  }
+  const w0 = 2 * Math.PI * 850 / sr, al = Math.sin(w0) / 1.8, cw = Math.cos(w0);
+  const b0 = al / (1 + al), b2 = -al / (1 + al), a1 = -2 * cw / (1 + al), a2 = (1 - al) / (1 + al);
+  let x1 = 0, x2 = 0, y1 = 0, y2 = 0, npk = 0;
+  const noise = new Float64Array(len);
+  for (let n = 0; n < len; n++) {
+    const x = (Math.random() * 2 - 1) * env[n];
+    const y = b0 * x + b2 * x2 - a1 * y1 - a2 * y2;
+    x2 = x1; x1 = x; y2 = y1; y1 = y; noise[n] = y;
+    npk = Math.max(npk, Math.abs(y));
+  }
+  const nGain = npk > 0 ? 0.20 / npk : 0;
+  for (let n = 0; n < len; n++) d[n] = tonal[n] * tGain + noise[n] * nGain;
+  return buf;
+}
+function startAudio() {
+  if (!actx) { actx = new (window.AudioContext || window.webkitAudioContext)(); gainNode = actx.createGain(); gainNode.gain.value = 0.85; gainNode.connect(actx.destination); }
+  actx.resume();
+  stopAudio(true);
+  srcNode = actx.createBufferSource();
+  srcNode.buffer = buildAudioBuffer();
+  srcNode.loop = true; srcNode.connect(gainNode); srcNode.start();
+  S.playing = true; $("btnPlay").textContent = "■ 停止";
+}
+function stopAudio(soft) {
+  if (srcNode) { try { srcNode.stop(); } catch (e) {} srcNode = null; }
+  S.playing = false;
+  if (!soft) $("btnPlay").textContent = "▶ 播放花纹噪声";
+}
+
+/* ---------------- 主流程 ---------------- */
+async function runOptimize() {
+  try { readInputs(); } catch (e) { showWarn([e], true); return; }
+  const fw = feasibilityWarn();
+  buildTrig(S.C);
+  $("btnOpt").disabled = true; $("btnRand").disabled = true;
+  const t0 = performance.now();
+  const best = await anneal(parseInt($("iters").value), p => { $("progBar").style.width = (p * 100).toFixed(0) + "%"; });
+  const optMs = performance.now() - t0;
+  $("progBar").style.width = "0%";
+  $("btnOpt").disabled = false; $("btnRand").disabled = false;
+  const m = evaluate(best), v = violations(best);
+  const warns = fw.slice();
+  if (v.total > 0) warns.push("仍有 " + v.total + " 处约束违规(连排 " + v.runV + " / 相邻比 " + v.ratioV + "),请放宽约束或调整数量");
+  showWarn(warns, v.total > 0);
+  renderAll(m, v, optMs);
+  // 单次评估基准
+  const t1 = performance.now();
+  for (let r = 0; r < 50; r++) spectrum(S.cum, S.N, S.N);
+  const perEval = (performance.now() - t1) / 50;
+  $("evalBadge").textContent = "单次序列评估 " + perEval.toFixed(2) + " ms · 全程 < 1 s";
+}
+function runRandom() {
+  try { readInputs(); } catch (e) { showWarn([e], true); return; }
+  buildTrig(S.C);
+  const seq = randomSeq();
+  const m = evaluate(seq), v = violations(seq);
+  showWarn(v.total > 0 ? ["随机对照序列:约束违规 " + v.total + " 处(连排 " + v.runV + " / 相邻比 " + v.ratioV + ")——这正是需要优化的原因"] : [], v.total > 0);
+  renderAll(m, v, null);
+}
+function renderAll(m, v, optMs) {
+  renderMetrics(m, v, optMs);
+  renderStrip();
+  drawOrderChart();
+  drawFreqChart();
+  rebuildBlocks();
+  if (S.playing) startAudio();
+}
+
+/* ---------------- 事件 ---------------- */
+$("btnOpt").addEventListener("click", runOptimize);
+$("btnRand").addEventListener("click", runRandom);
+$("btnPlay").addEventListener("click", () => { if (!S.seq) return; S.playing ? stopAudio() : startAudio(); });
+let spdTimer = null;
+$("spd").addEventListener("input", () => {
+  S.audioSpeed = parseInt($("spd").value);
+  $("spdLab").textContent = S.audioSpeed + " km/h";
+  if (S.playing) { clearTimeout(spdTimer); spdTimer = setTimeout(startAudio, 180); }
+});
+$("btnCopy").addEventListener("click", () => {
+  const ta = $("seqText"); ta.select();
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).catch(() => document.execCommand("copy"));
+  else document.execCommand("copy");
+  $("btnCopy").textContent = "已复制 ✓"; setTimeout(() => $("btnCopy").textContent = "复制序列", 1200);
+});
+[0, 1, 2].forEach(i => {
+  $("len" + i).addEventListener("change", () => { try { readInputs(); showWarn(feasibilityWarn()); } catch (e) { showWarn([e], true); } });
+  $("cnt" + i).addEventListener("change", () => { try { readInputs(); showWarn(feasibilityWarn()); } catch (e) { showWarn([e], true); } });
+});
+window.addEventListener("resize", () => { if (S.seq) { drawOrderChart(); drawFreqChart(); } });
+
+init3D();
+runOptimize();
+</script>
