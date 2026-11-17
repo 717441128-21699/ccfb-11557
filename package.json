@@ -1,0 +1,24 @@
+{
+  "name": "ceramic-tile-texture-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "陶瓷釉面瓷砖四方连续纹理生产工具（浏览器端，TypeScript）",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "esbuild tests/pipeline.test.ts --bundle --platform=node --format=esm --outfile=tests/.build/test.mjs --log-level=warning && node tests/.build/test.mjs"
+  },
+  "dependencies": {
+    "ktx-parse": "^0.4.5",
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.169.0",
+    "playwright-core": "^1.65.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}

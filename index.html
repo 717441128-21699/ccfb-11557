@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2311161f'/%3E%3Cg fill='none' stroke='%234f9cf9' stroke-width='2'%3E%3Crect x='6' y='6' width='9' height='9'/%3E%3Crect x='17' y='6' width='9' height='9'/%3E%3Crect x='6' y='17' width='9' height='9'/%3E%3Crect x='17' y='17' width='9' height='9'/%3E%3C/g%3E%3C/svg%3E"
+    />
+    <title>瓷砖纹理工坊 · Tile Texture Studio</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-mark">▦</span>
+          <div>
+            <h1>瓷砖纹理工坊</h1>
+            <p>样片校正 · 四方连续合成 · PBR 烘焙 · 铺贴预览 · 批量导出</p>
+          </div>
+        </div>
+        <div class="header-status" id="header-status">未导入样片</div>
+      </header>
+      <nav class="tabbar" id="tabbar"></nav>
+      <main id="page" class="page"></main>
+      <div id="toast" class="toast" hidden></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
